@@ -47,7 +47,11 @@ SELECT *
 FROM 
     Covid_Death_Counts_US;
 
--- See highest number of deaths
+-- Create index
+-- Column most often used is Deaths_involving_COVID_19
+CREATE INDEX death_count ON COVID_Death_Counts_US(Deaths_involving_COVID_19);
+
+-- See highest number of deaths(need to see max digit length)
 SELECT 
     * 
 FROM 
@@ -55,7 +59,7 @@ FROM
 ORDER BY 
     Deaths_involving_COVID_19 DESC;
 
--- See highest number of deaths from all causes
+-- See highest number of deaths from all causes(need to see max digit length)
 SELECT
     *
 FROM 
@@ -92,4 +96,3 @@ FROM
 ORDER BY 
     State;
 
-SELECT DISTINCT(State) FROM COVID_Death_Counts_US GROUP BY State ORDER BY State;

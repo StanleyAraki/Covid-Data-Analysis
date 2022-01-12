@@ -128,31 +128,6 @@ WHERE
 
 SELECT * FROM COVID_Historical_Changes_US_COunty WHERE percent_test_results_reported_positive_last_7_days IS NOT NULL oRDER BY date desc;
 
--- Percent change between most recent and one before for historical changes
-
-SELECT
-	d1.state_name,
-	d1.county_name,
-	d1.date,
-	d1.cases_per_100k_7_day_count_change,
-	d1.percent_test_results_reported_Positive_last_7_days,
-	(((CAST(d1.cases_per_100k_7_day_count_change AS decimal(7,3))-CAST(d2.cases_per_100k_7_day_count_change AS decimal(7,3)))-1) * 100)
-FROM
-	COVID_historical_changes_us_county d1, COVID_historical_changes_us_county d2
-WHERE
-	d1.date = '2022-01-03'
-	AND
-	d2.date = '2022-01-02'
-	AND 
-	d1.cases_per_100k_7_day_count_change IS NOT NULL 
-	AND
-	d1.cases_per_100k_7_day_count_change != 'suppressed'
-	AND 
-	d2.cases_per_100k_7_day_count_change IS NOT NULL
-	AND 
-	d2.cases_per_100k_7_day_count_change != 'suppressed'
-	
-	
 
 
 

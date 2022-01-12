@@ -19,6 +19,9 @@ ORDER BY
 -- Add primary key to table
 ALTER TABLE COVID_Historical_changes_US_County ADD PRIMARY KEY (date, fips_code);
 
+-- Add index to table
+CREATE INDEX COVID_Cases_Index ON COVID_Historical_changes_US_County(cases_per_100k_7_day_count_change);
+
 -- According to CDC, suppressed indicates cells with frequency low enough to identify people(0 < case count < 10)
 -- An entry with 0 or "NULL" indicate different things, so we will keep the 'suppressed' data
 
@@ -89,6 +92,84 @@ ALTER COLUMN
 TYPE 
 	DECIMAL(8, 3)
 USING 
-	(cases_per_100k_7_day_count_change::decimal(8,3));
+	(cases_per_100k_7_day_count_change::DECIMAL(8,3));
+
+-- Convert column 'percent_test_results_reported_positive_last_7_days' datatype to decimal(5, 2)
+
+ALTER TABLE
+	COVID_Historical_Changes_US_County
+ALTER COLUMN
+	percent_test_results_reported_positive_last_7_days
+TYPE
+	DECIMAL(5, 2)
+USING
+	(percent_test_results_reported_positive_last_7_days::DECIMAL(5, 2))
+
+
+-- Get table showing max number of cases in county per state per date
+
+SELECT
+	d1.date,
+	d1.state_name,
+	d1.county_name, 
+	d1.cases_per_100k_7_day_count_change
+FROM
+	COVID_historical_changes_US_County d1
+	INNER JOIN
+	(
+		SELECT
+			State_name, 
+			MAX(cases_per_100k_7_day_count_change) AS max_cases,
+			date
+		FROM
+			COVID_Historical_changes_US_County
+		GROUP BY 
+			date,
+			state_name
+	) d2
+	ON 
+		d1.State_name = d2.State_name
+		AND
+		d1.cases_per_100k_7_day_count_change = d2.max_cases
+		AND
+		d1.date = d2.date
+ORDER BY 
+	d1.date DESC,
+	d2.state_name;
+		
+-- Get percent change in cases_per_100k_7_day_count_change per day in all counties
+
+SELECT
+	d1.date,
+	d1.state_name,
+	d1.county_name,
+	d1.cases_per_100k_7_day_count_change,
+	(((d1.cases_per_100k_7_day_count_change / NULLIF(d2.cases_per_100k_7_day_count_change, 0)) -1) * 100) AS "% Change COVID Cases"
+FROM
+	(
+		SELECT 
+			x.date AS someDate, 
+			MAX(y.date) AS prevDate
+		FROM
+			COVID_Historical_changes_US_County x
+		INNER JOIN 
+			COVID_Historical_changes_US_County y
+		ON 
+			x.Date > y.Date
+		GROUP BY
+			x.date
+	) temp1
+	INNER JOIN
+		COVID_Historical_Changes_US_County d1 
+		ON 
+			temp1.someDate = d1.date
+	INNER JOIN
+		COVID_Historical_changes_US_County d2
+		ON
+			temp1.prevDate = d2.date
+ORDER BY 
+	d1.date,
+	d1.state_name,
+	d1.county_name;
 
 

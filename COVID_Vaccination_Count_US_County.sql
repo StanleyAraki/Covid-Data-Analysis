@@ -100,18 +100,34 @@ ORDER BY
 
 -- The above query tells us that there is no row that was not labeled 'UNK' on 2021-02-19 but was labeled 'UNK' on 2021-02-20
 
+-- Thus, we will remove all data labeled 'UNK'
+
+SELECT COUNT(*) FROM COVID_Vaccination_Count_US_County WHERE fips = 'UNK';
+
+DELETE FROM COVID_Vaccination_Count_US_County WHERE fips = 'UNK';
+
 -- Get trends in historic change in data for vaccine series completion for overall population, and different age groups
 
 SELECT 
 	date,
-	recip_county,
 	recip_state,
+	recip_county,
+	fips,
 	series_complete_pop_pct,
+	series_complete_5pluspop_pct,
 	series_complete_12pluspop_pct,
 	series_complete_18pluspop_pct,
 	series_complete_65pluspop_pct
 FROM
 	COVID_Vaccination_Count_US_County
+WHERE
+	fips IS NOT NULL
+ORDER BY 
+	date DESC,
+	recip_state,
+	recip_county;
+
+SELECT * FROM COVID_vaccination_count_Us_County ORDER BY date DESC LIMIT 1000;
 
 -- Get counts of counties per state on most recent date to match with Census data to see which, if any, counties are missing
 SELECT
@@ -122,4 +138,12 @@ FROM
 WHERE
 	date = '2021-12-20'
 GROUP BY recip_state
+
+-- Export queries of interest:
+
+-- Historic change in vaccination rates in US Counties and States (run in psql commandline)
+
+\COPY (SELECT date, recip_state, recip_county, fips, series_complete_pop_pct, series_complete_5pluspop_pct, series_complete_12pluspop_pct, series_complete_18pluspop_pct, series_complete_65pluspop_pct FROM COVID_Vaccination_Count_US_County WHERE fips IS NOT NULL ORDER BY date DESC, recip_state, recip_county ) TO '/Users/stanleyaraki/Desktop/covid-data-analysis/vaccination_historic_change.csv' DELIMITER ',' CSV HEADER;
+
+
 

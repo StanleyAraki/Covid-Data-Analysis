@@ -137,7 +137,7 @@ ORDER BY
 	d1.date DESC,
 	d2.state_name;
 		
--- Get percent change in cases_per_100k_7_day_count_change per day in all counties
+-- Get percent change in cases_per_100k_7_day_count_change per day in all counties starting 2021-12-01
 
 SELECT
 	d1.date,
@@ -156,6 +156,10 @@ FROM
 			COVID_Historical_changes_US_County y
 		ON 
 			x.Date > y.Date
+		WHERE
+			x.Date > '2021-12-01' 
+			AND
+			y.Date > '2021-12-01'
 		GROUP BY
 			x.date
 	) temp1
@@ -171,5 +175,11 @@ ORDER BY
 	d1.date,
 	d1.state_name,
 	d1.county_name;
+
+-- Export queries of interest
+
+-- County with max number of cases per state per date
+
+\COPY (SELECT d1.date,d1.state_name, d1.county_name, d1.cases_per_100k_7_day_count_change FROM COVID_historical_changes_US_County d1 INNER JOIN (SELECT State_name, MAX(cases_per_100k_7_day_count_change) AS max_cases, date FROM COVID_Historical_changes_US_County GROUP BY date, state_name) d2 ON d1.State_name = d2.State_name AND d1.cases_per_100k_7_day_count_change = d2.max_cases AND d1.date = d2.date ORDER BY d1.date DESC, d2.state_name) TO '/Users/stanleyaraki/Desktop/covid-data-analysis/max_cases_county_state_date.csv' DELIMITER ',' CSV HEADER;
 
 

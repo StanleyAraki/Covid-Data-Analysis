@@ -69,16 +69,26 @@ ORDER BY
 
 
 -- Get percentage of COVID Deaths out of total deaths per county
-SELECT 
-    *,
-    CAST(CAST(Deaths_involving_COVID_19 AS DECIMAL(7,2))/CAST(Deaths_from_All_Causes AS DECIMAL(8,2))*100.0 AS DECIMAL(5,2)) AS COVID_Death_Percentage
+
+SELECT
+	date_as_of,
+	state,
+	county_name,
+	fips_county_code,
+	Cast((Deaths_involving_COVID_19 * 1.0) / NULLIF((Deaths_from_All_Causes * 1.0), 0) * 100.0 AS DECIMAL(5,2)) AS Percent_COVID_Death,
+	footnote
 FROM
-    COVID_Death_Counts_US;
+	COVID_Death_Counts_US
+ORDER BY 
+	state,
+	county_name
 
 -- County with the largest number of COVID deaths per state
 SELECT 
+	date_as_of,
     d1.State,
     d1.County_name,
+	fips_county_code,
     d1.Deaths_involving_COVID_19
 FROM
     COVID_Death_Counts_US d1
@@ -94,5 +104,17 @@ FROM
     ) d2
     ON d1.State = d2.State AND d1.Deaths_involving_COVID_19 = d2.Max_Deaths
 ORDER BY 
-    State;
+    d1.State,
+	d1.county_name;
+
+-- Export queries of interest
+
+-- Percent of COVID deaths out of all deaths
+
+\COPY (SELECT date_as_of, state, county_name, fips_county_code, Cast((Deaths_involving_COVID_19 * 1.0) / NULLIF((Deaths_from_All_Causes * 1.0), 0) * 100.0 AS DECIMAL(5,2)) AS Percent_COVID_Death, footnote FROM COVID_Death_Counts_US ORDER BY state, county_name) TO '/Users/stanleyaraki/Desktop/covid-data-analysis/percent_COVID_death.csv' DELIMITER ',' CSV HEADER;
+
+-- County with largest number of COVID deaths per state
+
+\COPY (SELECT date_as_of, d1.State, d1.County_name, fips_county_code, d1.Deaths_involving_COVID_19 FROM COVID_Death_Counts_US d1 INNER JOIN (SELECT State, MAX(Deaths_involving_COVID_19) AS Max_Deaths FROM COVID_Death_Counts_US GROUP BY State) d2 ON d1.State = d2.State AND d1.Deaths_involving_COVID_19 = d2.Max_Deaths ORDER BY d1.State, d1.county_name) TO '/Users/stanleyaraki/Desktop/covid-data-analysis/Max_COVID_Deaths_County_State.csv' DELIMITER ',' CSV HEADER;
+
 
